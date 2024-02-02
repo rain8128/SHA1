@@ -46,33 +46,62 @@ WORD K(int t){
     return ret;
 }
 
-void SHA1(const BYTE buf[], unsigned int length, BYTE digest[20]){
-    if(length > 64 - 9){
-        digest = NULL;
-        return;
+void SHA1Process(SHA1Context*);
+
+int SHA1Init(SHA1Context* Ctx){
+    Ctx->Length_Low  = 0;
+    Ctx->Length_High = 0;
+    Ctx->index       = 0;
+
+    Ctx->H[0] = 0x67452301;
+    Ctx->H[1] = 0xEFCDAB89;
+    Ctx->H[2] = 0x98BADCFE;
+    Ctx->H[3] = 0x10325476;
+    Ctx->H[4] = 0xC3D2E1F0;
+
+    Ctx->Flag = 0;
+    return shaSuccess;
+}
+
+int SHA1Update(SHA1Context* Ctx,const BYTE buf[], unsigned int length){
+    
+    if(length == 0){
+        return shaSuccess;
     }
 
-    BYTE msg[64] = {0};
-    for(int i = 0; i < length; i++){
-        msg[i] = buf[i];
-    }
-    msg[length] = 0x80;
-
-    length *= 8;
-    for(int i = 0; i < 4; i++){
-        msg[63-i] = length >> (i * 8);
+    if(!Ctx || !buf){
+        return shaNull;
     }
 
-    WORD H[5];
-    H[0] = 0x67452301;
-    H[1] = 0xEFCDAB89;
-    H[2] = 0x98BADCFE;
-    H[3] = 0x10325476;
-    H[4] = 0xC3D2E1F0;
+    if(Ctx->Flag){
+        return shaStateError;
+    }
 
-    WORD W[80] = {0};
-    for(int i = 0; i < 64; i++){
-        W[i/4] |= msg[i] << ((3 - (i % 4)) * 8);
+    while(length--){
+        Ctx->msg[Ctx->index++] = *buf++ & 0xFF;
+        Ctx->Length_Low += 8;
+
+        if(Ctx->Length_Low == 0){
+            Ctx->Length_High++;
+            if(Ctx->Length_High == 0){
+                Ctx->Flag |= SHA1TOOLONG;
+            }
+        }
+
+        if(Ctx->index == 64){
+            SHA1Process(Ctx);
+        }
+    }
+    return shaSuccess;
+}
+
+void SHA1Process(SHA1Context* Ctx){
+    WORD W[80];
+    for(int i = 0; i < 16; i++){
+        W[i] = Ctx->msg[i*4  ] << 24
+             | Ctx->msg[i*4+1] << 16
+             | Ctx->msg[i*4+2] << 8
+             | Ctx->msg[i*4+3];
     }
 
     for(int t = 16; t < 80; t++){
@@ -80,11 +109,11 @@ void SHA1(const BYTE buf[], unsigned int length, BYTE digest[20]){
     }
 
     WORD TEMP;
-    WORD A = H[0];
-    WORD B = H[1];
-    WORD C = H[2];
-    WORD D = H[3];
-    WORD E = H[4];
+    WORD A = Ctx->H[0];
+    WORD B = Ctx->H[1];
+    WORD C = Ctx->H[2];
+    WORD D = Ctx->H[3];
+    WORD E = Ctx->H[4];
 
     for(int t = 0; t < 80; t++){
         TEMP = ROL(A,5) + f(t, B, C, D) + E + W[t] + K(t);
@@ -95,13 +124,51 @@ void SHA1(const BYTE buf[], unsigned int length, BYTE digest[20]){
         A = TEMP;
     }
 
-    H[0] += A;
-    H[1] += B;
-    H[2] += C;
-    H[3] += D;
-    H[4] += E;
+    Ctx->H[0] += A;
+    Ctx->H[1] += B;
+    Ctx->H[2] += C;
+    Ctx->H[3] += D;
+    Ctx->H[4] += E;
+
+    Ctx->index = 0;
+}
+
+int SHA1Result(SHA1Context* Ctx, BYTE digest[20]){
+
+    if(!Ctx || !digest){
+        return shaNull;
+    }
+
+    if(!(Ctx->Flag & SHA1COMPUTED)){
+        Ctx->msg[Ctx->index++] = 0x80;
+
+        if(Ctx->index > 56){
+            while(Ctx->index < 64){
+                Ctx->msg[Ctx->index++] = 0;
+            }   
+            SHA1Process(Ctx);
+        }
+
+        while(Ctx->index < 56){
+            Ctx->msg[Ctx->index++] = 0;
+        }
+
+        Ctx->msg[56] = Ctx->Length_High >> 24;
+        Ctx->msg[57] = Ctx->Length_High >> 16;
+        Ctx->msg[58] = Ctx->Length_High >> 8;
+        Ctx->msg[59] = Ctx->Length_High;
+        Ctx->msg[60] = Ctx->Length_Low >> 24;
+        Ctx->msg[61] = Ctx->Length_Low >> 16;
+        Ctx->msg[62] = Ctx->Length_Low >> 8;
+        Ctx->msg[63] = Ctx->Length_Low;
+
+        SHA1Process(Ctx);
+        Ctx->Flag |= SHA1COMPUTED;
+    }
 
     for(int i = 0; i < 20; i++){
-        digest[i] = H[i/4] >> ((3 - (i % 4)) * 8);
+        digest[i] = Ctx->H[i/4] >> ((3 - (i % 4)) * 8);
     }
+
+    return shaSuccess;
 }
