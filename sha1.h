@@ -26,9 +26,7 @@ typedef struct SHA1Context{
 }SHA1Context;
 
 int SHA1Init(SHA1Context*);
-
 int SHA1Update(SHA1Context*, const BYTE[], unsigned int);
-
 int SHA1Result(SHA1Context*, BYTE[20]);
 
 
