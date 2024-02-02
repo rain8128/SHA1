@@ -10,7 +10,7 @@ typedef uint32_t WORD;
 
 // }SHA1Ctx;
 
-void SHA1(const BYTE buf[], unsigned int length, BYTE output[20]);
+void SHA1(const BYTE buf[], unsigned int length, BYTE digest[20]);
 
 
 

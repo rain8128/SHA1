@@ -46,9 +46,9 @@ WORD K(int t){
     return ret;
 }
 
-void SHA1(const BYTE buf[], unsigned int length, BYTE output[20]){
+void SHA1(const BYTE buf[], unsigned int length, BYTE digest[20]){
     if(length > 64 - 9){
-        output = NULL;
+        digest = NULL;
         return;
     }
 
@@ -102,6 +102,6 @@ void SHA1(const BYTE buf[], unsigned int length, BYTE output[20]){
     H[4] += E;
 
     for(int i = 0; i < 20; i++){
-        output[i] = H[i/4] >> ((3 - (i % 4)) * 8);
+        digest[i] = H[i/4] >> ((3 - (i % 4)) * 8);
     }
 }
