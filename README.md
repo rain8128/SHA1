@@ -25,4 +25,4 @@ This function accepts an array of octets `buf` as the next portion of the messag
 ```C
 int SHA1Result(SHA1Context* Ctx, BYTE digest[20])
 ```
-Computes the message digest and store to `digest`.
+Computes the message digest and stores to `digest`.
