@@ -23,6 +23,6 @@ This function accepts an array of octets `buf` as the next portion of the messag
 #### SHA1Result
 
 ```C
-int SHA1Result(SHA1Context* Ctx, BYTE digest[20])
+int SHA1Result(SHA1Context* Ctx, BYTE digest[20]);
 ```
 Computes the message digest and stores to `digest`.
