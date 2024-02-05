@@ -18,7 +18,7 @@ Call this before calling other function to init `Ctx`.
 int SHA1Update(SHA1Context* Ctx, const BYTE buf[], unsigned int length);
 ```
 
-This function accepts an array of octets `buf` as the next portion of the message. `length` is a length of `buf`.
+This function accepts an array of octets `buf` as the next portion of the message. `length` is the length of `buf`.
 
 #### SHA1Result
 
